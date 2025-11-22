@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Mini E-commerce — Capstone</title>
+  
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <h1 class="logo">MiniShop</h1>
+      <div class="search-wrap">
+        <input id="searchInput" type="search" placeholder="Search products..." />
+      </div>
+      <div class="controls">
+        <select id="categoryFilter">
+          <option value="all">All categories</option>
+        </select>
+        <select id="sortSelect">
+          <option value="default">Sort</option>
+          <option value="price-asc">Price: Low → High</option>
+          <option value="price-desc">Price: High → Low</option>
+        </select>
+
+        <button id="cartToggle" class="cart-btn">
+          Cart <span id="cartCount" class="cart-count">0</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container main-grid">
+    <section class="products-section">
+      <div class="section-top">
+        <h2>Products</h2>
+        <button id="showAddProduct" class="btn small">+ Add Product (Admin)</button>
+      </div>
+      <div id="productsGrid" class="products-grid"></div>
+    </section>
+
+    <aside class="sidebar">
+      <div class="card">
+        <h3>About Project</h3>
+        <p>This is a capstone mini e-commerce built with HTML/CSS/JS. It stores cart & products in localStorage.</p>
+      </div>
+
+      <div class="card">
+        <h3>Quick Tips</h3>
+        <ul>
+          <li>Use the admin form to add products.</li>
+          <li>Cart persists across reloads.</li>
+          <li>Try mobile view — responsive layout included.</li>
+        </ul>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Cart drawer -->
+  <div id="cartDrawer" class="cart-drawer">
+    <div class="cart-header">
+      <h3>Your Cart</h3>
+      <button id="closeCart" class="close">✕</button>
+    </div>
+    <div id="cartItems" class="cart-items"></div>
+    <div class="cart-footer">
+      <div class="total">Total: ₹<span id="cartTotal">0.00</span></div>
+      <button id="checkoutBtn" class="btn">Checkout</button>
+    </div>
+  </div>
+
+  <!-- Product modal -->
+  <div id="modal" class="modal hidden">
+    <div class="modal-content">
+      <button id="modalClose" class="close">✕</button>
+      <div id="modalBody"></div>
+    </div>
+  </div>
+
+  <!-- Add product form (Admin) -->
+  <div id="addProductForm" class="modal hidden">
+    <div class="modal-content">
+      <button id="addFormClose" class="close">✕</button>
+      <h3>Add New Product</h3>
+      <form id="productForm">
+        <label>Title<input required name="title" /></label>
+        <label>Category<input name="category" /></label>
+        <label>Price (₹)<input required name="price" type="number" min="0" step="0.01" /></label>
+        <label>Image URL<input name="image" placeholder="optional" /></label>
+        <label>Description<textarea name="description"></textarea></label>
+        <div style="text-align:right">
+          <button type="submit" class="btn">Add Product</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Checkout form modal -->
+  <div id="checkoutModal" class="modal hidden">
+    <div class="modal-content">
+      <button id="checkoutClose" class="close">✕</button>
+      <h3>Checkout</h3>
+      <div id="checkoutBody">
+        <form id="checkoutForm">
+          <label>Full name<input name="name" required /></label>
+          <label>Email<input name="email" type="email" required /></label>
+          <label>Address<textarea name="address" required></textarea></label>
+          <div class="checkout-summary">
+            <p>Order total: ₹<span id="checkoutTotal">0.00</span></p>
+          </div>
+          <div style="text-align:right">
+            <button type="submit" class="btn">Place Order</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>Made for Capstone — Mini E-commerce. (No real payments)</p>
+    </div>
+  </footer>
+
+
+  <style>:root{
+  --bg:#f6f7fb;
+  --card:#ffffff;
+  --accent:#2b7a78;
+  --muted:#666;
+  --glass: rgba(255,255,255,0.7);
+  --shadow: 0 6px 18px rgba(20,20,50,0.08);
+  --radius: 12px;
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg);color:#222}
+.container{max-width:1100px;margin:0 auto;padding:1rem}
+
+/* Header */
+.site-header{background:linear-gradient(90deg,#fff,#f8fbfb);border-bottom:1px solid #e8eef0;position:sticky;top:0;z-index:30}
+.header-inner{display:flex;align-items:center;gap:1rem;padding:0.75rem}
+.logo{font-weight:700;color:var(--accent);margin:0}
+.search-wrap{flex:1}
+.search-wrap input{width:100%;padding:0.5rem 0.75rem;border-radius:8px;border:1px solid #e3e7ea;background:white}
+.controls{display:flex;gap:0.5rem;align-items:center}
+.controls select{padding:0.4rem;border-radius:8px;border:1px solid #e3e7ea;background:white}
+.btn{background:var(--accent);color:white;border:none;padding:0.5rem 0.9rem;border-radius:10px;cursor:pointer;box-shadow:var(--shadow)}
+.btn.small{padding:0.4rem 0.6rem;font-size:0.9rem}
+.cart-btn{position:relative}
+.cart-count{background:#ff5858;color:white;padding:0.15rem 0.5rem;border-radius:999px;margin-left:6px;font-size:0.85rem}
+
+/* Layout */
+.main-grid{display:grid;grid-template-columns:1fr 300px;gap:1rem;padding:1.25rem 0}
+.products-section{min-height:60vh}
+.section-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem}
+.products-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1rem}
+
+/* Product card */
+.product{background:var(--card);border-radius:12px;padding:0.75rem;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:0.6rem;transition:transform .18s ease,box-shadow .18s ease}
+.product:hover{transform:translateY(-6px)}
+.product img{width:100%;height:160px;object-fit:cover;border-radius:8px}
+.product h4{margin:0;font-size:1rem}
+.price{font-weight:700;color:var(--accent)}
+.actions{display:flex;gap:0.5rem;align-items:center;margin-top:auto}
+.actions .btn{flex:1}
+
+/* Sidebar */
+.sidebar .card{background:var(--card);padding:0.9rem;border-radius:12px;margin-bottom:1rem;box-shadow:var(--shadow)}
+
+/* Cart drawer */
+.cart-drawer{position:fixed;right:0;top:0;height:100vh;width:360px;background:var(--card);box-shadow: -12px 0 30px rgba(10,10,30,0.12);transform:translateX(100%);transition:transform .25s ease;padding:1rem;z-index:50;display:flex;flex-direction:column}
+.cart-drawer.open{transform:translateX(0)}
+.cart-header{display:flex;justify-content:space-between;align-items:center}
+.cart-items{flex:1;overflow:auto;margin-top:0.75rem}
+.cart-item{display:flex;gap:0.6rem;padding:0.5rem 0;border-bottom:1px solid #f0f2f3;align-items:center}
+.cart-item img{width:64px;height:64px;object-fit:cover;border-radius:8px}
+.qty-controls{display:flex;gap:0.4rem;align-items:center}
+.cart-footer{display:flex;justify-content:space-between;align-items:center;padding-top:0.6rem}
+
+/* Modal */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;padding:1rem;z-index:60}
+.modal .modal-content{width:100%;max-width:640px;background:var(--card);border-radius:12px;padding:1rem;box-shadow:var(--shadow);position:relative}
+.modal.hidden{display:none}
+.close{background:none;border:none;font-size:1.1rem;cursor:pointer;opacity:0.7}
+label{display:block;margin:0.5rem 0}
+input,textarea,select{width:100%;padding:0.5rem;border-radius:8px;border:1px solid #e6eaee;background:white}
+textarea{min-height:90px}
+
+/* Footer */
+.site-footer{padding:1rem 0;text-align:center;color:var(--muted);border-top:1px solid #e8eef0;margin-top:1rem}
+
+/* Responsive */
+@media (max-width:900px){
+  .main-grid{grid-template-columns:1fr}
+  .sidebar{order:2}
+  .products-section{order:1}
+  .cart-drawer{width:100%}
+}
+</style>
+
+  <script>/* app.js - Mini E-commerce Capstone
+   Features:
+   - Product listing, search, filter, sort
+   - Cart (localStorage persistence)
+   - Add product admin form (localStorage)
+   - Checkout flow (mock)
+*/
+
+const STORAGE_KEYS = {
+  PRODUCTS: 'mini_ecom_products_v1',
+  CART: 'mini_ecom_cart_v1'
+};
+
+const DEFAULT_PRODUCTS = [
+  { id: 'p1', title: 'Classic Mug', category: 'Home', price: 299, image: '', description:'A ceramic mug for your daily chai.'},
+  { id: 'p2', title: 'Canvas Tote Bag', category: 'Fashion', price: 499, image: '', description:'Sturdy tote for groceries & books.'},
+  { id: 'p3', title: 'Bluetooth Speaker', category: 'Electronics', price: 1499, image: '', description:'Compact speaker with clear sound.'},
+  { id: 'p4', title: 'Notebook (A5)', category: 'Stationery', price: 149, image: '', description:'Ruled notebook for notes and sketches.'}
+];
+
+/* ---------- Simple localStorage helpers ---------- */
+function read(key){ try { return JSON.parse(localStorage.getItem(key)) ?? null } catch(e){ return null } }
+function write(key, value){ localStorage.setItem(key, JSON.stringify(value)) }
+
+/* ---------- App state ---------- */
+let products = read(STORAGE_KEYS.PRODUCTS) || DEFAULT_PRODUCTS.slice()
+let cart = read(STORAGE_KEYS.CART) || []
+
+/* ---------- DOM refs ---------- */
+const productsGrid = document.getElementById('productsGrid')
+const searchInput = document.getElementById('searchInput')
+const categoryFilter = document.getElementById('categoryFilter')
+const sortSelect = document.getElementById('sortSelect')
+const cartCount = document.getElementById('cartCount')
+const cartToggle = document.getElementById('cartToggle')
+const cartDrawer = document.getElementById('cartDrawer')
+const cartItemsEl = document.getElementById('cartItems')
+const cartTotalEl = document.getElementById('cartTotal')
+const closeCart = document.getElementById('closeCart')
+const modal = document.getElementById('modal')
+const modalBody = document.getElementById('modalBody')
+const modalClose = document.getElementById('modalClose')
+const showAddProduct = document.getElementById('showAddProduct')
+const addProductForm = document.getElementById('addProductForm')
+const addFormClose = document.getElementById('addFormClose')
+const productForm = document.getElementById('productForm')
+const checkoutBtn = document.getElementById('checkoutBtn')
+const checkoutModal = document.getElementById('checkoutModal')
+const checkoutClose = document.getElementById('checkoutClose')
+const checkoutForm = document.getElementById('checkoutForm')
+const checkoutTotal = document.getElementById('checkoutTotal')
+
+/* ---------- Utility ---------- */
+function formatCurrency(n){ return n.toFixed(2) }
+
+/* ---------- Rendering ---------- */
+function renderCategories(){
+  const cats = ['all', ...new Set(products.map(p=>p.category || 'Uncategorized'))]
+  categoryFilter.innerHTML = cats.map(c => `<option value="${c}">${c}</option>`).join('')
+}
+
+function renderProducts(){
+  const q = searchInput.value.trim().toLowerCase()
+  const category = categoryFilter.value
+  const sort = sortSelect.value
+
+  let list = products.filter(p => {
+    const matchQ = p.title.toLowerCase().includes(q) || (p.description||'').toLowerCase().includes(q)
+    const matchCat = category === 'all' || p.category === category
+    return matchQ && matchCat
+  })
+
+  if(sort === 'price-asc') list.sort((a,b)=>a.price-b.price)
+  if(sort === 'price-desc') list.sort((a,b)=>b.price-a.price)
+
+  productsGrid.innerHTML = list.map(p => productCardHtml(p)).join('')
+  attachProductCardEvents()
+}
+
+function productCardHtml(p){
+  const img = p.image && p.image.trim() ? p.image : `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='400'><rect width='100%' height='100%' fill='%23e9eef0'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='%23777' font-size='24'>No Image</text></svg>`
+  return `
+    <div class="product" data-id="${p.id}">
+      <img src="${img}" alt="${p.title}" />
+      <h4>${escapeHtml(p.title)}</h4>
+      <div class="muted">${escapeHtml(p.category || '')}</div>
+      <div class="price">₹${formatCurrency(p.price)}</div>
+      <div class="actions">
+        <button class="btn view-btn">View</button>
+        <button class="btn add-btn">Add to cart</button>
+      </div>
+    </div>
+  `
+}
+
+function escapeHtml(s=''){ return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;') }
+
+/* ---------- Product interactions ---------- */
+function attachProductCardEvents(){
+  document.querySelectorAll('.product').forEach(card=>{
+    const id = card.dataset.id
+    card.querySelector('.view-btn').addEventListener('click', ()=> showProductModal(id))
+    card.querySelector('.add-btn').addEventListener('click', ()=> addToCart(id,1))
+  })
+}
+
+function showProductModal(id){
+  const p = products.find(x=>x.id===id)
+  if(!p) return
+  modalBody.innerHTML = `
+    <div style="display:flex;gap:1rem;align-items:flex-start;flex-direction:column">
+      <img style="width:100%;max-height:260px;object-fit:cover;border-radius:8px" src="${p.image || ''}" alt="${escapeHtml(p.title)}" />
+      <h3>${escapeHtml(p.title)}</h3>
+      <div class="muted">${escapeHtml(p.category || '')}</div>
+      <p>${escapeHtml(p.description || '')}</p>
+      <div style="display:flex;gap:0.5rem;justify-content:flex-end;width:100%">
+        <div style="font-weight:700">₹${formatCurrency(p.price)}</div>
+        <button id="modalAdd" class="btn">Add to cart</button>
+      </div>
+    </div>
+  `
+  modal.classList.remove('hidden')
+  document.getElementById('modalAdd').addEventListener('click', ()=>{
+    addToCart(id,1)
+    modal.classList.add('hidden')
+  })
+}
+
+/* ---------- Cart logic ---------- */
+function saveState(){ write(STORAGE_KEYS.PRODUCTS, products); write(STORAGE_KEYS.CART, cart) }
+function updateCartUI(){
+  const count = cart.reduce((s,i)=>s+i.qty,0)
+  cartCount.textContent = count
+  // render items
+  cartItemsEl.innerHTML = cart.map(ci=>{
+    const p = products.find(x=>x.id===ci.id) || {title:'Unknown',image:'',price:0}
+    return `
+      <div class="cart-item" data-id="${ci.id}">
+        <img src="${p.image||''}" alt="${escapeHtml(p.title)}" />
+        <div style="flex:1">
+          <div style="font-weight:700">${escapeHtml(p.title)}</div>
+          <div>₹${formatCurrency(p.price)} x ${ci.qty} = ₹${formatCurrency(p.qty * p.price)}</div>
+          <div class="qty-controls" style="margin-top:6px">
+            <button class="decr">-</button>
+            <div style="padding:0.25rem 0.5rem">${ci.qty}</div>
+            <button class="incr">+</button>
+            <button class="remove" style="margin-left:8px">Remove</button>
+          </div>
+        </div>
+      </div>
+    `
+  }).join('')
+  const total = cart.reduce((s,i)=>s + ( (products.find(p=>p.id===i.id)?.price||0) * i.qty ), 0)
+  cartTotalEl.textContent = formatCurrency(total)
+  checkoutTotal.textContent = formatCurrency(total)
+  saveState()
+  attachCartEvents()
+}
+
+function addToCart(id, qty=1){
+  const existing = cart.find(i=>i.id===id)
+  if(existing) existing.qty += qty
+  else cart.push({id, qty})
+  updateCartUI()
+  // open drawer
+  openCart()
+}
+
+function attachCartEvents(){
+  cartItemsEl.querySelectorAll('.cart-item').forEach(el=>{
+    const id = el.dataset.id
+    el.querySelector('.incr').addEventListener('click', ()=>{
+      const it = cart.find(i=>i.id===id); if(it){ it.qty++; updateCartUI() }
+    })
+    el.querySelector('.decr').addEventListener('click', ()=>{
+      const it = cart.find(i=>i.id===id); if(it){ it.qty = Math.max(1, it.qty-1); updateCartUI() }
+    })
+    el.querySelector('.remove').addEventListener('click', ()=>{
+      cart = cart.filter(i=>i.id!==id); updateCartUI()
+    })
+  })
+}
+
+function openCart(){ cartDrawer.classList.add('open') }
+function closeCartDrawer(){ cartDrawer.classList.remove('open') }
+
+/* ---------- Admin product form ---------- */
+function generateId(){ return 'p'+Math.random().toString(36).slice(2,9) }
+productForm.addEventListener('submit', (e)=>{
+  e.preventDefault()
+  const fd = new FormData(productForm)
+  const newP = {
+    id: generateId(),
+    title: fd.get('title').trim(),
+    category: fd.get('category').trim() || 'Uncategorized',
+    price: Number(fd.get('price')),
+    image: fd.get('image').trim(),
+    description: fd.get('description').trim()
+  }
+  products.unshift(newP)
+  write(STORAGE_KEYS.PRODUCTS, products)
+  productForm.reset()
+  addProductForm.classList.add('hidden')
+  renderCategories(); renderProducts()
+})
+
+/* ---------- Checkout ---------- */
+checkoutBtn.addEventListener('click', ()=> {
+  if(cart.length === 0){ alert('Cart is empty') ; return }
+  checkoutModal.classList.remove('hidden')
+})
+checkoutForm.addEventListener('submit', (e)=>{
+  e.preventDefault()
+  const fd = new FormData(checkoutForm)
+  const order = {
+    id: 'ord_' + Date.now(),
+    name: fd.get('name'),
+    email: fd.get('email'),
+    address: fd.get('address'),
+    items: cart,
+    total: Number(checkoutTotal.textContent)
+  }
+  // In a real app you'd send to server. For this capstone we just clear cart and show success.
+  cart = []
+  saveState()
+  updateCartUI()
+  checkoutForm.reset()
+  checkoutModal.classList.add('hidden')
+  alert('Order placed! (mock) — Order ID: ' + order.id)
+})
+
+/* ---------- Small UI bindings ---------- */
+searchInput.addEventListener('input', renderProducts)
+categoryFilter.addEventListener('change', renderProducts)
+sortSelect.addEventListener('change', renderProducts)
+cartToggle.addEventListener('click', openCart)
+closeCart.addEventListener('click', closeCartDrawer)
+modalClose.addEventListener('click', ()=>modal.classList.add('hidden'))
+addFormClose.addEventListener('click', ()=>addProductForm.classList.add('hidden'))
+showAddProduct.addEventListener('click', ()=> addProductForm.classList.remove('hidden'))
+checkoutClose.addEventListener('click', ()=> checkoutModal.classList.add('hidden'))
+
+/* ---------- Initialize ---------- */
+function init(){
+  // If no products in localStorage, initialize defaults
+  if(!read(STORAGE_KEYS.PRODUCTS)) write(STORAGE_KEYS.PRODUCTS, products)
+  if(!read(STORAGE_KEYS.CART)) write(STORAGE_KEYS.CART, cart)
+  // populate categories and products
+  renderCategories()
+  renderProducts()
+  updateCartUI()
+}
+init()
+</script>
+</body>
+</html>
